@@ -1,0 +1,108 @@
+--Simulacro de relaciones tipo red social 
+{--problema relacionesValidas (relaciones: seq⟨String × String⟩) : Bool {
+requiere: {True}
+asegura: {(res = true) ↔ no hay tuplas en relaciones con ambas componentes iguales ni tuplas repetidas (sin considerar
+el orden)}}
+--no hay repetidos en la tupla (es decir que una persona no puede relacionarse consigo mismo)
+--}
+-- punto 1
+relacionesValidas :: [(String,String)] -> Bool
+relacionesValidas [] = True 
+relacionesValidas ((a,b):xs)|pertenece (b,a) ((a,b):xs) ==True || comparacioncomponentes (a,b) == True || repeticiones ((a,b):xs) == True = False 
+                            |otherwise= relacionesValidas xs 
+{-- está bien definido pues primero va por el caso del primer elemento de la lista y si ninguno de estos da false, sigue recorriendo la lista evaluando
+los pasos correspondientes en los elementos restantes hasta llega al último, y luego cerrar la lista.--}
+
+--función auxiliar para comparar componentes de las tuplas
+comparacioncomponentes :: (String,String) -> Bool 
+comparacioncomponentes ("","") = True
+comparacioncomponentes (x,y)| x==y = True 
+                            | otherwise = False 
+
+{-- no me hizo falta el de es reverso, pero lo dejo para ver si se podría aplicar
+esreverso :: (String,String) -> (String,String) -> Bool 
+esreverso x ("","")= False
+esreverso x y| (fst x == snd y) && (snd x == fst y) = True 
+             | otherwise = False 
+--}
+
+--definicion de funciones auxiliares para ver repeticiones de elementos
+repeticiones :: [(String,String)] -> Bool 
+repeticiones [] = False
+repeticiones [(a,b)] = False
+repeticiones ((a,b):xs) = pertenece (a,b) xs || repeticiones xs 
+
+pertenece :: (String,String) -> [(String,String)] -> Bool 
+pertenece a []= False 
+pertenece a s|a==head s =True 
+             |otherwise= pertenece a (tail s) 
+
+
+--punto 2 
+ {-- problema personas (relaciones: seq⟨String × String⟩) : seq⟨String⟩ {
+requiere: {relacionesValidas(relaciones)}
+asegura: {resu tiene exactamente los elementos que figuran en alguna tupla de relaciones en cualquiera de las dos
+posiciones, sin repetir}
+--}
+--uso la funcion de repeticiones, luego la de quitar todos sobre aplanar.
+personas :: [(String,String)] -> [String]
+personas [] = []
+personas ((a,b):xs) = eliminarrepes (aplanarstring ((a,b):xs)) 
+
+aplanarstring :: [(String,String)] -> [String]
+aplanarstring [("","")] = []
+aplanarstring [(a,b)] = ([a]++[b])
+aplanarstring ((a,b):xs) = ([a] ++ [b]) ++ aplanarstring (xs)
+
+eliminarrepes :: [String] -> [String]
+eliminarrepes [] = []
+eliminarrepes xs = head xs : eliminarrepes (quitartodos (head xs) xs)
+
+quitartodos :: String -> [String] -> [String]
+quitartodos _ [] = []
+quitartodos a (b:xs)|a==b = quitartodos a xs 
+                    |otherwise= b: quitartodos a xs
+--GRACIAS SEBI tu eliminar fue mas practico.
+
+--punto 3
+{-- problema amigosDe (personas: String, relaciones: seq〈StringxString〉) :seq〈String〉 {
+requiere: { relacionesValidas(relaciones) }
+asegura: { res tiene exactamente los elementos que figuran en las tuplas
+de relaciones en las que una de sus componentes es persona}
+--}
+amigosDe :: String -> [(String,String)] -> [String]
+amigosDe x [] = []
+amigosDe x [(a,b)] |x==a = [b]
+                   |x==b = [a]
+                   |otherwise = []
+amigosDe x ((a,b):xs) = (amigosDe x [(a,b)]) ++ amigosDe x xs 
+
+{--la funcion agarra, dandole una entrada de PERSONA, y luego evalua en las tuplas junto a que otros nombres aparece
+devolviendo así, las componentes que acompañan a esa PERSONA, como los amigos de esa--}
+
+--punto 4
+{--problema personaConMasAmigos (relaciones: seq〈StringxString〉) : String {
+requiere: { relaciones no vacıa }
+requiere: { relacionesValidas(relaciones) }
+asegura: { res es el Strings que aparece más veces en las tuplas de relaciones (o alguno de ellos si hay empate)--}
+
+{--defino una funcion auxiliar que calcule la cantidad de apariciones de personas en cada componente
+podria aplanar la lista, e ir calculando cantidad de apariciones de una palabra, luego compararlas, y q devuelva el más grande--}
+--Funciones Auxiliares:
+cantApariciones :: String -> [String] -> Int 
+cantApariciones x [] = 0 
+cantApariciones x [a]|x/= head [a] = 0
+                     |x==head [a] =1 + cantApariciones x (tail [a])
+cantApariciones x (y:xs) = (cantApariciones x [y]) + cantApariciones x xs 
+
+dameMasRepe :: [String] -> String  
+dameMasRepe [] = []
+dameMasRepe [a] = a 
+dameMasRepe (x:y:ys)|x==y = dameMasRepe (y:ys)
+                    |x/=y && cantApariciones x (x:y:ys) >= cantApariciones y (x:y:ys) = dameMasRepe (x:ys)
+                    |x/=y && cantApariciones x (x:y:ys) <= cantApariciones y (x:y:ys) = dameMasRepe (y:ys)
+
+personaConMasAmigos :: [(String,String)] -> String
+personaConMasAmigos ((a,b):xs) = dameMasRepe (aplanarstring ((a,b):xs))
+
+--y simulacro terminado creo que bastante bien ndea
